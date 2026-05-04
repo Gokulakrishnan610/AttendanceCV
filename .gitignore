@@ -1,0 +1,59 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Uploads and temporary files
+backend/uploads/
+backend/exports/
+uploads/
+exports/
+temp_images/
+temp_videos/
+dataset/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Node modules (if using npm)
+node_modules/
+
+# Environment variables
+.env
+.env.local
+
+# CSV exports
+*.csv
+
+# Face encodings
+known_encodings.npy
+known_names.npy
+
+# Firebase credentials
+*firebase*.json

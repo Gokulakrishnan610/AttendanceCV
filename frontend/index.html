@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AttendAI — Smart Attendance System</title>
+<meta name="description" content="AI-powered face recognition attendance system with analytics, PDF reports and role-based access">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen" class="login-screen">
+  <div class="login-bg"></div>
+  <div class="login-card">
+    <div class="login-logo"><i class="fas fa-user-shield"></i></div>
+    <h1>AttendAI</h1>
+    <p class="login-sub">Smart Face Recognition Attendance</p>
+    <form id="login-form" class="login-form">
+      <div class="lf-group">
+        <i class="fas fa-user lf-icon"></i>
+        <input type="text" id="lf-username" placeholder="Username" required autocomplete="username">
+      </div>
+      <div class="lf-group">
+        <i class="fas fa-lock lf-icon"></i>
+        <input type="password" id="lf-password" placeholder="Password" required autocomplete="current-password">
+        <button type="button" class="lf-eye" id="lf-eye"><i class="fas fa-eye"></i></button>
+      </div>
+      <div id="login-error" class="login-error"></div>
+      <button type="submit" class="btn-login" id="login-btn">
+        <span id="login-btn-text">Sign In</span>
+        <span id="login-spinner" class="spin hidden"><i class="fas fa-spinner fa-spin"></i></span>
+      </button>
+    </form>
+    <div class="login-hint">
+      <b>Demo:</b> admin/admin123 &nbsp;|&nbsp; teacher/teacher123
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app" class="app hidden">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-logo">
+      <div class="sb-icon"><i class="fas fa-user-check"></i></div>
+      <span>AttendAI</span>
+    </div>
+    <nav class="sb-nav" id="sb-nav">
+      <a href="#" class="sb-item active" data-page="dashboard"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a>
+      <a href="#" class="sb-item" data-page="register" data-roles="admin,teacher"><i class="fas fa-user-plus"></i><span>Register Student</span></a>
+      <a href="#" class="sb-item" data-page="import" data-roles="admin,teacher"><i class="fas fa-file-import"></i><span>Batch Import</span></a>
+      <a href="#" class="sb-item" data-page="webcam" data-roles="admin,teacher"><i class="fas fa-camera"></i><span>Webcam Scan</span></a>
+      <a href="#" class="sb-item" data-page="video" data-roles="admin,teacher"><i class="fas fa-video"></i><span>Video Upload</span></a>
+      <a href="#" class="sb-item" data-page="manual" data-roles="admin,teacher"><i class="fas fa-edit"></i><span>Manual Entry</span></a>
+      <a href="#" class="sb-item" data-page="history"><i class="fas fa-history"></i><span>History</span></a>
+      <a href="#" class="sb-item" data-page="analytics"><i class="fas fa-chart-line"></i><span>Analytics</span></a>
+      <a href="#" class="sb-item" data-page="ml-analytics"><i class="fas fa-robot"></i><span>ML Analytics</span></a>
+      <a href="#" class="sb-item" data-page="reports"><i class="fas fa-file-pdf"></i><span>Reports</span></a>
+      <a href="#" class="sb-item" data-page="users" data-roles="admin"><i class="fas fa-users-cog"></i><span>User Management</span></a>
+    </nav>
+    <div class="sb-user" id="sb-user">
+      <div class="sb-avatar" id="sb-avatar">A</div>
+      <div class="sb-info">
+        <div id="sb-name">Admin</div>
+        <div id="sb-role" class="sb-role-badge">admin</div>
+      </div>
+      <button class="sb-logout" id="logout-btn" title="Logout"><i class="fas fa-sign-out-alt"></i></button>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <div class="main-wrap">
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <button class="hamburger" id="hamburger"><i class="fas fa-bars"></i></button>
+      <div class="topbar-title" id="page-title">Dashboard</div>
+      <div class="topbar-right">
+        <span id="topbar-date" class="topbar-date"></span>
+        <button class="icon-btn" id="refresh-btn" title="Refresh"><i class="fas fa-sync-alt"></i></button>
+      </div>
+    </header>
+
+    <!-- PAGES -->
+    <main class="page-content">
+
+      <!-- DASHBOARD -->
+      <section class="page active" id="page-dashboard">
+        <div class="stat-grid">
+          <div class="stat-card present"><div class="stat-ic"><i class="fas fa-check-circle"></i></div><div><div class="stat-num" id="s-present">0</div><div class="stat-lbl">Present</div></div></div>
+          <div class="stat-card absent"><div class="stat-ic"><i class="fas fa-times-circle"></i></div><div><div class="stat-num" id="s-absent">0</div><div class="stat-lbl">Absent</div></div></div>
+          <div class="stat-card late"><div class="stat-ic"><i class="fas fa-clock"></i></div><div><div class="stat-num" id="s-late">0</div><div class="stat-lbl">Late</div></div></div>
+          <div class="stat-card total"><div class="stat-ic"><i class="fas fa-users"></i></div><div><div class="stat-num" id="s-total">0</div><div class="stat-lbl">Total Students</div></div></div>
+        </div>
+        <div class="dash-grid">
+          <div class="card">
+            <div class="card-head"><h3><i class="fas fa-calendar-day me2"></i>Today's Attendance</h3>
+              <div>
+                <button class="btn-sm" id="dash-refresh"><i class="fas fa-sync-alt"></i> Refresh</button>
+                <button class="btn-sm secondary" id="dash-export-pdf"><i class="fas fa-file-pdf"></i> PDF</button>
+              </div>
+            </div>
+            <div id="dash-list" class="attend-list"><div class="empty-state"><i class="fas fa-inbox"></i><p>No records yet</p></div></div>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3><i class="fas fa-chart-donut me2"></i>Quick Stats</h3></div>
+            <canvas id="donut-chart" width="280" height="280"></canvas>
+            <div class="rate-badge" id="rate-badge">—% Attendance</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- REGISTER STUDENT -->
+      <section class="page" id="page-register">
+        <div class="card max600">
+          <div class="card-icon-wrap orange"><i class="fas fa-user-plus"></i></div>
+          <h2>Register New Student</h2>
+          <p class="sub">Add student with optional face photo</p>
+          <form id="reg-form" class="form">
+            <div class="fg"><label>Full Name *</label><input type="text" id="reg-name" required placeholder="e.g. Priya Sharma"></div>
+            <div class="fg"><label>Student ID *</label><input type="text" id="reg-sid" required placeholder="e.g. CS2024001"></div>
+            <div class="fg"><label>Email</label><input type="email" id="reg-email" placeholder="student@college.edu"></div>
+            <div class="row2">
+              <div class="fg"><label>Department</label><input type="text" id="reg-dept" placeholder="CSE"></div>
+              <div class="fg"><label>Year</label><select id="reg-year"><option value="">Select</option><option>1</option><option>2</option><option>3</option><option>4</option></select></div>
+            </div>
+            <div class="fg">
+              <label>Face Photo (optional)</label>
+              <div class="upload-zone" id="reg-drop">
+                <input type="file" id="reg-image" accept="image/*">
+                <div class="upload-inner">
+                  <img id="reg-preview" class="hidden" alt="preview">
+                  <div id="reg-upload-placeholder"><i class="fas fa-camera"></i><span>Click or drag photo</span></div>
+                </div>
+              </div>
+            </div>
+            <button type="submit" class="btn-primary" id="reg-btn"><i class="fas fa-save me2"></i>Register Student<span class="spin hidden" id="reg-spin"><i class="fas fa-spinner fa-spin"></i></span></button>
+          </form>
+          <div id="reg-msg" class="msg hidden"></div>
+        </div>
+        <div class="card max600 mt2">
+          <div class="card-icon-wrap amber"><i class="fas fa-brain"></i></div>
+          <h2>Train Recognition Model</h2>
+          <p class="sub">Reload face encodings after registrations</p>
+          <button id="train-btn" class="btn-warning"><i class="fas fa-cogs me2"></i>Train Model<span class="spin hidden" id="train-spin"><i class="fas fa-spinner fa-spin"></i></span></button>
+          <div id="train-msg" class="msg hidden mt2"></div>
+        </div>
+      </section>
+
+      <!-- BATCH IMPORT -->
+      <section class="page" id="page-import">
+        <div class="card max700">
+          <div class="card-icon-wrap green"><i class="fas fa-file-import"></i></div>
+          <h2>Batch Student Import</h2>
+          <p class="sub">Upload a CSV or Excel file to import multiple students at once</p>
+          <div class="info-box mb2">
+            <i class="fas fa-info-circle"></i>
+            <div>Required columns: <b>student_id</b>, <b>name</b> — Optional: email, department, year</div>
+          </div>
+          <div class="upload-zone large" id="import-drop">
+            <input type="file" id="import-file" accept=".csv,.xlsx,.xls">
+            <div class="upload-inner">
+              <i class="fas fa-file-excel" id="import-icon"></i>
+              <span id="import-filename">Click or drag CSV / Excel file</span>
+            </div>
+          </div>
+          <button class="btn-primary mt2" id="import-btn"><i class="fas fa-upload me2"></i>Import Students<span class="spin hidden" id="import-spin"><i class="fas fa-spinner fa-spin"></i></span></button>
+          <div id="import-result" class="import-result hidden"></div>
+          <div class="card-head mt3">
+            <h3>CSV Template</h3>
+            <button class="btn-sm" id="dl-template"><i class="fas fa-download me1"></i>Download Template</button>
+          </div>
+          <pre class="code-preview">student_id,name,email,department,year
+CS001,Aarav Kumar,aarav@college.edu,CSE,2
+CS002,Priya Sharma,priya@college.edu,ECE,3</pre>
+        </div>
+      </section>
+
+      <!-- WEBCAM -->
+      <section class="page" id="page-webcam">
+        <div class="card max800">
+          <div class="card-icon-wrap green"><i class="fas fa-camera"></i></div>
+          <h2>Real-time Webcam Recognition</h2>
+          <p class="sub">Live face detection — recognized students are highlighted instantly</p>
+          <div class="webcam-wrap">
+            <video id="webcam-video" autoplay muted playsinline></video>
+            <canvas id="webcam-canvas"></canvas>
+            <div class="webcam-overlay" id="webcam-overlay">
+              <i class="fas fa-camera fa-3x"></i>
+              <p>Camera not started</p>
+            </div>
+          </div>
+          <div class="webcam-controls">
+            <button id="webcam-start" class="btn-primary"><i class="fas fa-play me2"></i>Start Camera</button>
+            <button id="webcam-stop" class="btn-danger hidden"><i class="fas fa-stop me2"></i>Stop</button>
+            <button id="webcam-mark" class="btn-success hidden"><i class="fas fa-check me2"></i>Mark Attendance</button>
+          </div>
+          <div id="webcam-detected" class="detected-list"></div>
+          <div id="webcam-msg" class="msg hidden mt2"></div>
+        </div>
+      </section>
+
+      <!-- VIDEO UPLOAD -->
+      <section class="page" id="page-video">
+        <div class="card max600">
+          <div class="card-icon-wrap green"><i class="fas fa-video"></i></div>
+          <h2>Video Upload Recognition</h2>
+          <p class="sub">Upload a class recording to auto-mark attendance</p>
+          <form id="vid-form" class="form">
+            <div class="fg">
+              <label>Class Video</label>
+              <div class="upload-zone" id="vid-drop">
+                <input type="file" id="vid-file" accept="video/*" required>
+                <div class="upload-inner"><i class="fas fa-film"></i><span id="vid-fname">Choose video (MP4, AVI, MOV)</span></div>
+              </div>
+            </div>
+            <button type="submit" class="btn-primary" id="vid-btn"><i class="fas fa-search me2"></i>Recognize Faces<span class="spin hidden" id="vid-spin"><i class="fas fa-spinner fa-spin"></i></span></button>
+          </form>
+          <div id="vid-msg" class="msg hidden mt2"></div>
+        </div>
+      </section>
+
+      <!-- MANUAL ENTRY -->
+      <section class="page" id="page-manual">
+        <div class="card max600">
+          <div class="card-icon-wrap blue"><i class="fas fa-edit"></i></div>
+          <h2>Manual Attendance Entry</h2>
+          <p class="sub">Manually update or override attendance status</p>
+          <form id="man-form" class="form">
+            <div class="fg"><label>Student</label>
+              <select id="man-student" required><option value="">Select student...</option></select>
+            </div>
+            <div class="fg"><label>Date</label><input type="date" id="man-date" required></div>
+            <div class="fg"><label>Status</label>
+              <div class="status-row">
+                <label class="status-opt present"><input type="radio" name="man-status" value="Present" required><span><i class="fas fa-check-circle"></i> Present</span></label>
+                <label class="status-opt absent"><input type="radio" name="man-status" value="Absent"><span><i class="fas fa-times-circle"></i> Absent</span></label>
+                <label class="status-opt late"><input type="radio" name="man-status" value="Late"><span><i class="fas fa-clock"></i> Late</span></label>
+              </div>
+            </div>
+            <button type="submit" class="btn-primary" id="man-btn"><i class="fas fa-save me2"></i>Save Attendance<span class="spin hidden" id="man-spin"><i class="fas fa-spinner fa-spin"></i></span></button>
+          </form>
+          <div id="man-msg" class="msg hidden mt2"></div>
+        </div>
+      </section>
+
+      <!-- HISTORY -->
+      <section class="page" id="page-history">
+        <div class="card">
+          <div class="card-head">
+            <h3><i class="fas fa-history me2"></i>Attendance History</h3>
+            <div class="filter-row">
+              <input type="date" id="hist-from" class="inp-sm" placeholder="From">
+              <input type="date" id="hist-to" class="inp-sm" placeholder="To">
+              <select id="hist-student" class="inp-sm"><option value="">All Students</option></select>
+              <button class="btn-sm" id="hist-search"><i class="fas fa-search"></i> Search</button>
+              <button class="btn-sm secondary" id="hist-export-csv"><i class="fas fa-download"></i> CSV</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>#</th><th>Student ID</th><th>Name</th><th>Date</th><th>Status</th></tr></thead>
+              <tbody id="hist-body"><tr><td colspan="5" class="tc">Use filters above to search</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ANALYTICS -->
+      <section class="page" id="page-analytics">
+        <div class="analytics-grid">
+          <div class="card span2">
+            <div class="card-head"><h3><i class="fas fa-chart-line me2"></i>30-Day Attendance Trend</h3></div>
+            <canvas id="trend-chart" height="100"></canvas>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3><i class="fas fa-chart-bar me2"></i>Weekly Pattern</h3></div>
+            <canvas id="weekly-chart" height="180"></canvas>
+          </div>
+          <div class="card">
+            <div class="card-head"><h3><i class="fas fa-trophy me2"></i>Top Attendees</h3></div>
+            <div id="top-list" class="attend-list"></div>
+          </div>
+          <div class="card span2">
+            <div class="card-head"><h3><i class="fas fa-table me2"></i>Student-wise Summary</h3></div>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead><tr><th>Student ID</th><th>Name</th><th>Present</th><th>Absent</th><th>Late</th><th>Total</th><th>Rate</th></tr></thead>
+                <tbody id="analytics-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ML ANALYTICS -->
+      <section class="page" id="page-ml-analytics">
+        <div class="ml-header">
+          <div class="ml-title">
+            <i class="fas fa-robot"></i>
+            <div>
+              <h2>Machine Learning Analytics</h2>
+              <p>AI-powered predictions and risk classification</p>
+            </div>
+          </div>
+          <button class="btn-primary" id="ml-refresh"><i class="fas fa-sync-alt me2"></i>Run Analysis</button>
+        </div>
+
+        <!-- ML Stats -->
+        <div class="ml-stats-grid">
+          <div class="ml-stat-card blue">
+            <div class="ml-stat-icon"><i class="fas fa-chart-line"></i></div>
+            <div class="ml-stat-content">
+              <div class="ml-stat-label">Current Trend</div>
+              <div class="ml-stat-value" id="ml-trend">—</div>
+              <div class="ml-stat-sub" id="ml-trend-sub">Loading...</div>
+            </div>
+          </div>
+          <div class="ml-stat-card orange">
+            <div class="ml-stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
+            <div class="ml-stat-content">
+              <div class="ml-stat-label">At-Risk Students</div>
+              <div class="ml-stat-value" id="ml-risk-count">—</div>
+              <div class="ml-stat-sub" id="ml-risk-sub">Loading...</div>
+            </div>
+          </div>
+          <div class="ml-stat-card green">
+            <div class="ml-stat-icon"><i class="fas fa-percentage"></i></div>
+            <div class="ml-stat-content">
+              <div class="ml-stat-label">Current Average</div>
+              <div class="ml-stat-value" id="ml-avg">—</div>
+              <div class="ml-stat-sub">Overall attendance rate</div>
+            </div>
+          </div>
+          <div class="ml-stat-card purple">
+            <div class="ml-stat-icon"><i class="fas fa-brain"></i></div>
+            <div class="ml-stat-content">
+              <div class="ml-stat-label">Model Accuracy</div>
+              <div class="ml-stat-value" id="ml-accuracy">—</div>
+              <div class="ml-stat-sub" id="ml-accuracy-sub">Loading...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Linear Regression -->
+        <div class="card">
+          <div class="card-head">
+            <h3><i class="fas fa-chart-line me2"></i>Linear Regression - Attendance Predictions</h3>
+            <span class="badge blue">7-Day Forecast</span>
+          </div>
+          <div id="ml-linear-loading" class="loading-state">
+            <i class="fas fa-spinner fa-spin fa-2x"></i>
+            <p>Running Linear Regression...</p>
+          </div>
+          <div id="ml-linear-content" class="hidden">
+            <div class="ml-prediction-grid">
+              <div class="ml-prediction-chart">
+                <canvas id="ml-prediction-chart" height="250"></canvas>
+              </div>
+              <div class="ml-prediction-info">
+                <div class="ml-info-item">
+                  <div class="ml-info-label">Trend Direction</div>
+                  <div class="ml-info-value" id="ml-direction">—</div>
+                </div>
+                <div class="ml-info-item">
+                  <div class="ml-info-label">Rate of Change</div>
+                  <div class="ml-info-value" id="ml-rate">—</div>
+                </div>
+                <div class="ml-info-item">
+                  <div class="ml-info-label">Trend Strength</div>
+                  <div class="ml-info-value" id="ml-strength">—</div>
+                </div>
+                <div class="ml-info-item">
+                  <div class="ml-info-label">R² Score</div>
+                  <div class="ml-info-value" id="ml-r2">—</div>
+                </div>
+              </div>
+            </div>
+            <div class="ml-recommendation" id="ml-recommendation">
+              <i class="fas fa-lightbulb"></i>
+              <div>
+                <strong>Recommendation:</strong>
+                <p id="ml-rec-text">Loading...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Logistic Regression -->
+        <div class="card">
+          <div class="card-head">
+            <h3><i class="fas fa-exclamation-triangle me2"></i>Logistic Regression - At-Risk Students</h3>
+            <span class="badge orange">Risk Classification</span>
+          </div>
+          <div id="ml-logistic-loading" class="loading-state">
+            <i class="fas fa-spinner fa-spin fa-2x"></i>
+            <p>Running Logistic Regression...</p>
+          </div>
+          <div id="ml-logistic-content" class="hidden">
+            <div class="ml-risk-summary">
+              <div class="ml-risk-stat">
+                <div class="ml-risk-num" id="ml-total-students">0</div>
+                <div class="ml-risk-label">Total Students</div>
+              </div>
+              <div class="ml-risk-stat critical">
+                <div class="ml-risk-num" id="ml-critical-count">0</div>
+                <div class="ml-risk-label">Critical</div>
+              </div>
+              <div class="ml-risk-stat high">
+                <div class="ml-risk-num" id="ml-high-count">0</div>
+                <div class="ml-risk-label">High Risk</div>
+              </div>
+              <div class="ml-risk-stat medium">
+                <div class="ml-risk-num" id="ml-medium-count">0</div>
+                <div class="ml-risk-label">Medium Risk</div>
+              </div>
+              <div class="ml-risk-stat good">
+                <div class="ml-risk-num" id="ml-good-count">0</div>
+                <div class="ml-risk-label">Good Standing</div>
+              </div>
+            </div>
+
+            <div class="ml-tabs">
+              <button class="ml-tab active" data-tab="at-risk">At-Risk Students</button>
+              <button class="ml-tab" data-tab="good-standing">Good Standing</button>
+            </div>
+
+            <div class="ml-tab-content active" id="ml-tab-at-risk">
+              <div class="table-wrap">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Student ID</th>
+                      <th>Name</th>
+                      <th>Attendance</th>
+                      <th>Recent Trend</th>
+                      <th>Risk %</th>
+                      <th>Severity</th>
+                      <th>Max Absent</th>
+                    </tr>
+                  </thead>
+                  <tbody id="ml-risk-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="ml-tab-content" id="ml-tab-good-standing">
+              <div class="table-wrap">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Student ID</th>
+                      <th>Name</th>
+                      <th>Attendance</th>
+                      <th>Recent Trend</th>
+                      <th>Good %</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="ml-good-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="ml-recommendations" id="ml-recommendations">
+              <h4><i class="fas fa-tasks me2"></i>Recommendations</h4>
+              <ul id="ml-rec-list"></ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Overall Insights -->
+        <div class="card">
+          <div class="card-head">
+            <h3><i class="fas fa-lightbulb me2"></i>Overall Insights</h3>
+          </div>
+          <div id="ml-insights-loading" class="loading-state">
+            <i class="fas fa-spinner fa-spin fa-2x"></i>
+            <p>Generating insights...</p>
+          </div>
+          <div id="ml-insights-content" class="hidden">
+            <div class="ml-insights-grid" id="ml-insights-grid"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- REPORTS -->
+      <section class="page" id="page-reports">
+        <div class="reports-grid">
+          <div class="card">
+            <div class="card-icon-wrap red"><i class="fas fa-file-pdf"></i></div>
+            <h3>Daily Report (PDF)</h3>
+            <p class="sub">Full attendance for a specific date</p>
+            <div class="fg"><label>Date</label><input type="date" id="rpt-date"></div>
+            <button class="btn-primary mt2" id="rpt-daily-btn"><i class="fas fa-download me2"></i>Download PDF</button>
+          </div>
+          <div class="card">
+            <div class="card-icon-wrap blue"><i class="fas fa-file-pdf"></i></div>
+            <h3>Summary Report (PDF)</h3>
+            <p class="sub">Per-student summary over a date range</p>
+            <div class="row2">
+              <div class="fg"><label>From</label><input type="date" id="rpt-from"></div>
+              <div class="fg"><label>To</label><input type="date" id="rpt-to"></div>
+            </div>
+            <button class="btn-primary mt2" id="rpt-summary-btn"><i class="fas fa-download me2"></i>Download PDF</button>
+          </div>
+          <div class="card">
+            <div class="card-icon-wrap green"><i class="fas fa-file-csv"></i></div>
+            <h3>CSV Export</h3>
+            <p class="sub">Raw attendance data as spreadsheet</p>
+            <div class="row2">
+              <div class="fg"><label>From</label><input type="date" id="csv-from"></div>
+              <div class="fg"><label>To</label><input type="date" id="csv-to"></div>
+            </div>
+            <button class="btn-primary mt2" id="rpt-csv-btn"><i class="fas fa-download me2"></i>Download CSV</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- USER MANAGEMENT -->
+      <section class="page" id="page-users">
+        <div class="card">
+          <div class="card-head">
+            <h3><i class="fas fa-users-cog me2"></i>User Management</h3>
+            <button class="btn-sm" id="add-user-btn"><i class="fas fa-plus me1"></i>Add User</button>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Username</th><th>Full Name</th><th>Role</th><th>Status</th><th>Last Login</th><th>Actions</th></tr></thead>
+              <tbody id="users-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- USER MODAL -->
+<div id="user-modal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-head"><h3 id="user-modal-title">Add User</h3><button class="modal-close" id="user-modal-close">&times;</button></div>
+    <form id="user-form" class="form">
+      <input type="hidden" id="um-id">
+      <div class="row2">
+        <div class="fg"><label>Username *</label><input type="text" id="um-username" required></div>
+        <div class="fg"><label>Password</label><input type="password" id="um-password" placeholder="Leave blank to keep"></div>
+      </div>
+      <div class="row2">
+        <div class="fg"><label>Full Name</label><input type="text" id="um-name"></div>
+        <div class="fg"><label>Email</label><input type="email" id="um-email"></div>
+      </div>
+      <div class="row2">
+        <div class="fg"><label>Role *</label>
+          <select id="um-role" required><option value="student">Student</option><option value="teacher">Teacher</option><option value="admin">Admin</option></select>
+        </div>
+        <div class="fg"><label>Student ID (if student)</label><input type="text" id="um-sid"></div>
+      </div>
+      <div class="fg"><label>Status</label>
+        <select id="um-active"><option value="1">Active</option><option value="0">Inactive</option></select>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" id="user-modal-cancel">Cancel</button>
+        <button type="submit" class="btn-primary" id="um-save">Save User</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="toast hidden"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
